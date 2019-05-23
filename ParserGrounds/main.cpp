@@ -51,7 +51,101 @@ struct Mesh
 	vector<int> indices;
 
 
-	void save(const char* fileName , bool append = false)
+	void saveForceBundle(const char* fileName)
+	{
+		fstream file;
+		int mode = ios::out;
+		{
+			file.open(fileName, mode);
+
+
+			cout << "Forcing bundle!" << endl;
+			file.seekp(ios_base::beg);
+			file.seekg(ios_base::beg);
+			file.write("const MeshBundle =\n{\n", sizeof("const MeshBundle =\n{\n") - 1);
+
+
+
+			file.write(name, strlen(name));
+
+			file.write(" :\n{\nvertices:new Float32Array([", sizeof(" =\n{\nvertices:new Float32Array([") - 1);
+
+		}
+
+
+
+		{
+			size_t i = 0;
+			char buffer[256];
+			int  strSize = sprintf(buffer, "%f,%f,%f,%f,%f,%f,%f,%f",
+				vertices[i].pos.data[0], vertices[i].pos.data[1], vertices[i].pos.data[2],
+				vertices[i].norm.data[0], vertices[i].norm.data[1], vertices[i].norm.data[2],
+				vertices[i].tex.data[0], vertices[i].tex.data[1]);
+			file.write(buffer, strSize);
+		}
+		for (size_t i = 1; i < vertices.size(); i++)
+		{
+			char buffer[256];
+			int  strSize = sprintf(buffer, ",%f,%f,%f,%f,%f,%f,%f,%f",
+				vertices[i].pos.data[0], vertices[i].pos.data[1], vertices[i].pos.data[2],
+				vertices[i].norm.data[0], vertices[i].norm.data[1], vertices[i].norm.data[2],
+				vertices[i].tex.data[0], vertices[i].tex.data[1]);
+			file.write(buffer, strSize);
+		}
+
+		if (indices.size() < 256)
+		{
+			file.write("]),\nindices: new  Uint8Array([", sizeof("]),\nindices: new  Uint8Array([") - 1);
+		}
+		else
+			if (indices.size() < 65535)
+			{
+				file.write("]),\nindices: new  Uint16Array([", sizeof("]),\nindices: new  Uint16Array([") - 1);
+			}
+			else
+			{
+				file.write("]),\nindices: new  Uint32Array([", sizeof("]),\nindices: new  Uint32Array([") - 1);
+			}
+
+
+
+		{
+			size_t i = 0;
+			char buffer[128];
+			int  strSize = sprintf(buffer, "%d", indices[i]);
+			file.write(buffer, strSize);
+		}
+		for (size_t i = 1; i < indices.size(); i++)
+		{
+			char buffer[128];
+			int  strSize = sprintf(buffer, ",%d", indices[i]);
+			file.write(buffer, strSize);
+		}
+
+		file.write("]),\n", sizeof("]),\n") - 1);
+
+
+		file.write("attributes:[[3, 0], [3, 12], [2, 24]],\n", sizeof("attributes:[[3, 0], [3, 12], [2, 24]],\n") - 1);
+
+
+		char buffer[128];
+		int  strSize = sprintf(buffer, "indexCount:%d,\n", indices.size());
+		file.write(buffer, strSize);
+		strSize = sprintf(buffer, "vertexCount:%d,\n", vertices.size());
+		file.write(buffer, strSize);
+		strSize = sprintf(buffer, "stride:%d\n}", 32);
+		file.write(buffer, strSize);
+
+
+		{
+			file.write("\n}", sizeof("\n}") - 1);
+		}
+
+		file.close();
+	}
+
+
+	void save(const char* fileName , bool append = false )
 	{
 		fstream file;
 		int mode = ios::out;
@@ -535,7 +629,7 @@ void OBJParser::load(const char* fileName)
 				advance += ParseFloat(buffer + advance, &value) +1;
 				vec.data[0] = value;
 				 
-
+ 
 				advance += ParseFloat(buffer + advance, &value) +1;
 				vec.data[1] = value;
 
@@ -551,10 +645,10 @@ void OBJParser::load(const char* fileName)
 					Vec2 vec;
 					float value;
 					advance += ParseFloat(buffer + advance , &value) + 1;
-					vec.data[1] =  value;
+					vec.data[1] =   1.0 -value;
 
 					advance += ParseFloat(buffer + advance, &value) + 1;
-					vec.data[0] = value;
+					vec.data[0] =  1.0-  value;
 
 					m_texCoords.push_back(vec);
 
@@ -593,6 +687,13 @@ void OBJParser::load(const char* fileName)
 							m_positionIndices.push_back(parseInt(buffer) - 1); buffer++;
 							m_texCoordIndices.push_back(parseInt(buffer) - 1); buffer++;
 							m_normalIndices.push_back(parseInt(buffer)   - 1); buffer++;
+
+
+							/*auto size = m_texCoordIndices.size();
+
+							auto temp = m_texCoordIndices[size - 1];
+							m_texCoordIndices[size - 1] = m_texCoordIndices[size - 2];
+							m_texCoordIndices[size - 2] = temp;*/
 
 
 
@@ -653,16 +754,20 @@ int main(int argc, char **  argv)
 
 
 	
-	//parser.load("sim.obj");
-	//parser.load("ig.obj");
-
- 
 
 	char path[] = "D:\\Linux\\Saved\\GX v0.4\\mesh\\meshBundle.js";
 
-	parser.load("models/dragon.obj");
-	auto m = parser.proces("Dragon");
-	m.save(path, true);
+
+	parser.load("models/ship.obj");
+	auto m = parser.proces("Jet");
+
+	// force to create initial bunde item
+	m.saveForceBundle(path);
+
+
+	//parser.load("models/dragon.obj");
+	//auto m = parser.proces("Dragon");
+	//m.save(path, true);
 
 	parser.load("models/simpleBox.obj");
 	m = parser.proces("Cube");
@@ -680,73 +785,10 @@ int main(int argc, char **  argv)
 	m = parser.proces("HPlane");
 	m.save(path, true);
 
-	parser.load("models/ship.obj");
-	m = parser.proces("Jet");
-	m.save(path, true);
-
-
-	
-
-
-	///parser.load("plane.obj");
-	//  m = parser.proces("Plane");
-	//m.save("meshBundlex.js", true);
-
-	/*parser.load("ig.obj");
-	m = parser.proces("jet");
-	m.save("bundle.js", true);*/
-
 	system("pause");
 
 	return 0;
 }
 
 
-
-
-/*
-
-	float fl;
-	int adv = parser.ParseFloat("1.7566", &fl);
-	cout << "parsed as " << adv << " fl " << fl  << endl;
-
-	cout << "is equal " << parser.equal("465\0sad" , "46") << endl;
-
-
-	cout << "readed verices " << parser.m_positions.size() << endl;
-	//printVector3(parser.m_positions);
-
-
-	cout << "readed texcoord " << parser.m_texCoords.size() << endl;
-	//printVector2(parser.m_texCoords);
-
-	cout << "readed norm " << parser.m_normals.size() << endl;
-
-	//printVector3(parser.m_normals);
-
-	cout << "pos index " << parser.m_positionIndices.size() << endl;
-	//printVector(parser.m_positionIndices);
-
-	cout << "tex index " << parser.m_texCoordIndices.size() << endl;
-	//printVector(parser.m_texCoordIndices);
-
-	cout << "norm index " << parser.m_normalIndices.size() << endl;
-	//printVector(parser.m_normalIndices);
-
-
-
-	cout << "process " << endl;
-	*/
-
-
-
-
-
-
-
-
-
-/*cout << "m indices "   <<  m.indices.size() << endl;
-cout << "m vertcies "   <<  m.vertices.size() << endl;
-
-*/
+ 
