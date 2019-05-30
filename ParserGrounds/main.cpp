@@ -133,8 +133,17 @@ struct Mesh
 		file.write(buffer, strSize);
 		strSize = sprintf(buffer, "vertexCount:%d,\n", vertices.size());
 		file.write(buffer, strSize);
-		strSize = sprintf(buffer, "stride:%d\n}", 32);
+		//strSize = sprintf(buffer, "stride:%d\n}", 32);
+
+		auto scales = calculateBBox(vertices);
+		strSize = sprintf(buffer, "stride:%d,\nbbox:[%f,%f,%f],\nradius:%f\n}", 32 , scales[0] , scales[1] , scales[2] , scales[3]);
 		file.write(buffer, strSize);
+
+		std::cout << buffer << std::endl;
+
+
+
+		//calculateBBox
 
 
 		{
@@ -142,6 +151,37 @@ struct Mesh
 		}
 
 		file.close();
+	}
+
+	vector<float> calculateBBox(const vector<Vertex> &vertices)
+	{
+		float minx, maxx;
+		float miny, maxy;
+		float minz, maxz;
+
+		minx = maxx = vertices[0].pos.data[0];
+		miny = maxy = vertices[0].pos.data[1];
+		minz = maxz = vertices[0].pos.data[2];
+		
+		for (size_t i = 1; i < vertices.size(); i++)
+		{ 
+			if (minx > vertices[i].pos.data[0]) minx = vertices[i].pos.data[0];
+			if (maxx < vertices[i].pos.data[0]) maxx = vertices[i].pos.data[0];
+
+			if (miny > vertices[i].pos.data[1]) miny = vertices[i].pos.data[1];
+			if (maxy < vertices[i].pos.data[1]) maxy = vertices[i].pos.data[1];
+
+			if (minz > vertices[i].pos.data[2]) minz = vertices[i].pos.data[2];
+			if (maxz < vertices[i].pos.data[2]) maxz = vertices[i].pos.data[2];
+		}
+
+
+		float xs = std::abs((maxx - minx)*0.5);
+		float ys = std::abs((maxy - miny)*0.5);
+		float zs = std::abs((maxz - minz)*0.5);
+
+		return vector<float>{xs, ys, zs , std::max(std::max(xs , ys) , zs)  };
+
 	}
 
 
@@ -260,8 +300,13 @@ struct Mesh
 		file.write(buffer, strSize);
 		strSize = sprintf(buffer, "vertexCount:%d,\n", vertices.size());
 		file.write(buffer, strSize);
-		strSize = sprintf(buffer, "stride:%d\n}", 32);
+		//strSize = sprintf(buffer, "stride:%d\n}", 32);
+		auto scales = calculateBBox(vertices);
+		strSize = sprintf(buffer, "stride:%d,\nbbox:[%f,%f,%f],\nradius:%f\n}", 32, scales[0], scales[1], scales[2], scales[3]);
 		file.write(buffer, strSize);
+
+		std::cout << buffer << std::endl;
+
 
 		if (append)
 		{
@@ -747,16 +792,12 @@ void printVector(vector<int> vec)
 	}
 }
 
-int main(int argc, char **  argv)
+
+
+void oldPath()
 {
-
 	OBJParser parser;
-
-
-	
-
 	char path[] = "D:\\Linux\\Saved\\GX v0.4\\mesh\\meshBundle.js";
-
 
 	parser.load("models/ship.obj");
 	auto m = parser.proces("Jet");
@@ -765,9 +806,6 @@ int main(int argc, char **  argv)
 	m.saveForceBundle(path);
 
 
-	//parser.load("models/dragon.obj");
-	//auto m = parser.proces("Dragon");
-	//m.save(path, true);
 
 	parser.load("models/simpleBox.obj");
 	m = parser.proces("Cube");
@@ -784,6 +822,60 @@ int main(int argc, char **  argv)
 	parser.load("models/highplane.obj");
 	m = parser.proces("HPlane");
 	m.save(path, true);
+
+	system("pause");
+}
+
+
+int main(int argc, char **  argv)
+{
+	OBJParser parser;
+
+	char path[] = "D:\\Linux\\Saved\\GXv0.4-git\\mesh\\meshBundle.js";
+
+	parser.load("modelsx/ship.obj");
+	auto m = parser.proces("Jet");
+
+	// force to create initial bunde item
+	m.saveForceBundle(path);
+
+
+
+	parser.load("modelsx/simpleBox.obj");
+	m = parser.proces("Cube");
+	m.save(path, true);
+
+	//parser.load("modelsx/lsphere.obj");
+	parser.load("modelsx/lxsphrere.obj");
+	m = parser.proces("LSphere");
+	m.save(path, true);
+
+	parser.load("modelsx/sphere.obj");
+	m = parser.proces("Sphere");
+	m.save(path, true);
+
+	parser.load("modelsx/plane.obj");
+	m = parser.proces("Plane");
+	m.save(path, true);
+
+	parser.load("modelsx/cylinder.obj");
+	m = parser.proces("Cylinder");
+	m.save(path, true);
+
+
+	parser.load("modelsx/monkey.obj");
+	m = parser.proces("Monkey");
+	m.save(path, true);
+
+
+	parser.load("modelsx/torus.obj");
+	m = parser.proces("Torus");
+	m.save(path, true);
+
+	parser.load("modelsx/cone.obj");
+	m = parser.proces("Cone");
+	m.save(path, true);
+	
 
 	system("pause");
 
